@@ -383,7 +383,48 @@ public class RSA {
         this.publicKey = keyPair.getPublic();
 
         try {
-            this.csr = CsrHelper.generateCSR(this.publicKey, cn, keyTag);
+            this.csr = CsrHelper.generateCSR(this.publicKey, cn, keyTag, "SHA256withECDSA");
+        } catch (OperatorCreationException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @TargetApi(18)
+    public void generateCSRRSA(String cn,String keyTag, int keySize, Context context) throws IOException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, NoSuchProviderException, UnrecoverableEntryException, KeyStoreException, CertificateException {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(ALGORITHM, "AndroidKeyStore");
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
+            kpg.initialize(
+                    new KeyGenParameterSpec.Builder(
+                            keyTag,
+                            PURPOSE_ENCRYPT | PURPOSE_DECRYPT | PURPOSE_SIGN | PURPOSE_VERIFY
+                    )
+                            .setKeySize(keySize)
+                            .setDigests(DIGEST_SHA256, DIGEST_SHA512, DIGEST_SHA1)
+                            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1)
+                            .setSignaturePaddings(KeyProperties.SIGNATURE_PADDING_RSA_PKCS1)
+                            .build()
+            );
+        } else {
+            Calendar endDate = Calendar.getInstance();
+            endDate.add(Calendar.YEAR, 1);
+            KeyPairGeneratorSpec.Builder keyPairGeneratorSpec = new KeyPairGeneratorSpec.Builder(context)
+                    .setAlias(keyTag)
+                    .setSubject(new X500Principal(
+                            String.format("CN=%s, OU=%s", keyTag, context.getPackageName())
+                    ))
+                    .setSerialNumber(BigInteger.ONE)
+                    .setStartDate(Calendar.getInstance().getTime())
+                    .setEndDate(endDate.getTime());
+            if (android.os.Build.VERSION.SDK_INT >= 19) {
+                keyPairGeneratorSpec.setKeySize(keySize).setKeyType(ALGORITHM);
+            }
+            kpg.initialize(keyPairGeneratorSpec.build());
+        }
+
+        KeyPair keyPair = kpg.genKeyPair();
+        this.publicKey = keyPair.getPublic();
+        try {
+            this.csr = CsrHelper.generateCSR(this.publicKey, cn, keyTag, "SHA256withRSA");
         } catch (OperatorCreationException e) {
             e.printStackTrace();
         }

@@ -26,7 +26,7 @@ import java.util.Map;
 
 public class CsrHelper {
 
-    private final static String DEFAULT_SIGNATURE_ALGORITHM = "SHA256withECDSA";
+//    private final static String DEFAULT_SIGNATURE_ALGORITHM = "SHA256withECDSA";
     private final static String CN_PATTERN = "CN=%s";
 
     private static class JCESigner implements ContentSigner {
@@ -101,11 +101,11 @@ public class CsrHelper {
     }
 
     //Create the certificate signing request (CSR) from private and public keys
-    public static PKCS10CertificationRequest generateCSR(PublicKey publicKey, String cn, String keyTag) throws IOException,
+    public static PKCS10CertificationRequest generateCSR(PublicKey publicKey, String cn, String keyTag, String ALGORITHM) throws IOException,
             OperatorCreationException {
 
         String principal = String.format(CN_PATTERN, cn);
-        ContentSigner signer = new JCESigner (DEFAULT_SIGNATURE_ALGORITHM, keyTag);
+        ContentSigner signer = new JCESigner (ALGORITHM, keyTag);
         PKCS10CertificationRequestBuilder csrBuilder = new JcaPKCS10CertificationRequestBuilder(
                 new X500Name(principal), publicKey);
 
